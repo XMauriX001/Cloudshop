@@ -1,0 +1,29 @@
+# Dependencias de Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Archivos compilados y empaquetados
+backend/dist/
+*.zip
+
+# Variables de entorno
+.env
+.env.local
+
+# Archivos de Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db

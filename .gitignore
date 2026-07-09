@@ -15,7 +15,6 @@ backend/dist/
 .terraform/
 *.tfstate
 *.tfstate.*
-*.tfplan
 crash.log
 crash.*.log
 override.tf
@@ -28,3 +27,4 @@ terraform.rc
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+infraestructure/tfplan

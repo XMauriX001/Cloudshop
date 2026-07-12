@@ -526,6 +526,7 @@ resource "aws_api_gateway_deployment" "cloudshop_deployment" {
       aws_api_gateway_integration.carrito_integration.id,
       aws_api_gateway_integration.carrito_producto_id_integration.id,
       aws_api_gateway_integration.reportes_integration.id,
+      values(aws_api_gateway_integration.cors_options_integration)[*].id,
     ]))
   }
 
@@ -554,4 +555,67 @@ resource "aws_api_gateway_stage" "cloudshop_stage" {
   deployment_id = aws_api_gateway_deployment.cloudshop_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.cloudshop_api.id
   stage_name    = var.environment
+}
+
+locals {
+  cors_resources = {
+    usuarios             = aws_api_gateway_resource.usuarios_resource.id
+    login                = aws_api_gateway_resource.login_resource.id
+    usuario_id           = aws_api_gateway_resource.usuario_id_resource.id
+    productos            = aws_api_gateway_resource.productos_resource.id
+    producto_id          = aws_api_gateway_resource.producto_id_resource.id
+    pedidos              = aws_api_gateway_resource.pedidos_resource.id
+    pedido_id            = aws_api_gateway_resource.pedido_id_resource.id
+    tiendas              = aws_api_gateway_resource.tiendas_resource.id
+    tienda_id            = aws_api_gateway_resource.tienda_id_resource.id
+    carrito              = aws_api_gateway_resource.carrito_resource.id
+    carrito_producto_id  = aws_api_gateway_resource.carrito_producto_id_resource.id
+    reportes             = aws_api_gateway_resource.reportes_resource.id
+  }
+}
+
+resource "aws_api_gateway_method" "cors_options" {
+  for_each      = local.cors_resources
+  rest_api_id   = aws_api_gateway_rest_api.cloudshop_api.id
+  resource_id   = each.value
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "cors_options_integration" {
+  for_each    = local.cors_resources
+  rest_api_id = aws_api_gateway_rest_api.cloudshop_api.id
+  resource_id = each.value
+  http_method = aws_api_gateway_method.cors_options[each.key].http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "cors_options_response" {
+  for_each    = local.cors_resources
+  rest_api_id = aws_api_gateway_rest_api.cloudshop_api.id
+  resource_id = each.value
+  http_method = aws_api_gateway_method.cors_options[each.key].http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "cors_options_integration_response" {
+  for_each    = local.cors_resources
+  rest_api_id = aws_api_gateway_rest_api.cloudshop_api.id
+  resource_id = each.value
+  http_method = aws_api_gateway_method.cors_options[each.key].http_method
+  status_code = aws_api_gateway_method_response.cors_options_response[each.key].status_code
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+  depends_on = [aws_api_gateway_integration.cors_options_integration]
 }

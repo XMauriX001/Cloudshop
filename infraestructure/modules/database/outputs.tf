@@ -37,3 +37,11 @@ output "tiendas_table_name" {
 output "tiendas_table_arn" { 
   value = aws_dynamodb_table.tiendas.arn
 }
+
+output "carritos_table_name" {
+  value = aws_dynamodb_table.carritos.name
+}
+
+output "carritos_table_arn" {
+  value = aws_dynamodb_table.carritos.arn
+}

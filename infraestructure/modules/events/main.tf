@@ -58,3 +58,59 @@ resource "aws_lambda_permission" "allow_eventbridge_notificaciones" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.pedido_creado_rule.arn
 }
+
+resource "aws_cloudwatch_event_rule" "pedido_cancelado_rule" {
+  name           = "${var.environment}-pedido-cancelado-rule"
+  event_bus_name = aws_cloudwatch_event_bus.cloudshop_bus.name
+  description    = "Captura eventos de cancelacion de pedidos"
+
+  event_pattern = jsonencode({
+    source      = ["cloudshop.orders"]
+    detail-type = ["Pedido Cancelado"]
+  })
+}
+
+resource "aws_cloudwatch_event_target" "target_inventario_cancelado" {
+  rule           = aws_cloudwatch_event_rule.pedido_cancelado_rule.name
+  event_bus_name = aws_cloudwatch_event_bus.cloudshop_bus.name
+  target_id      = "RestaurarInventario"
+  arn            = var.lambda_inventario_arn
+}
+
+resource "aws_cloudwatch_event_target" "target_auditoria_cancelado" {
+  rule           = aws_cloudwatch_event_rule.pedido_cancelado_rule.name
+  event_bus_name = aws_cloudwatch_event_bus.cloudshop_bus.name
+  target_id      = "RegistrarAuditoriaCancelacion"
+  arn            = var.lambda_auditoria_arn
+}
+
+resource "aws_cloudwatch_event_target" "target_notificaciones_cancelado" {
+  rule           = aws_cloudwatch_event_rule.pedido_cancelado_rule.name
+  event_bus_name = aws_cloudwatch_event_bus.cloudshop_bus.name
+  target_id      = "NotificarCancelacion"
+  arn            = var.lambda_notificaciones_arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_inventario_cancelado" {
+  statement_id  = "AllowExecutionFromEventBridgeInventarioCancelado"
+  action        = "lambda:InvokeFunction"
+  function_name = var.lambda_inventario_function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.pedido_cancelado_rule.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_auditoria_cancelado" {
+  statement_id  = "AllowExecutionFromEventBridgeAuditoriaCancelado"
+  action        = "lambda:InvokeFunction"
+  function_name = var.lambda_auditoria_function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.pedido_cancelado_rule.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_notificaciones_cancelado" {
+  statement_id  = "AllowExecutionFromEventBridgeNotificacionesCancelado"
+  action        = "lambda:InvokeFunction"
+  function_name = var.lambda_notificaciones_function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.pedido_cancelado_rule.arn
+}

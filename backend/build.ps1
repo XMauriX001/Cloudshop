@@ -6,6 +6,8 @@ New-Item -ItemType Directory -Force -Path dist/catalog
 New-Item -ItemType Directory -Force -Path dist/orders
 New-Item -ItemType Directory -Force -Path dist/reports
 New-Item -ItemType Directory -Force -Path dist/events
+New-Item -ItemType Directory -Force -Path dist/tiendas
+New-Item -ItemType Directory -Force -Path dist/cart
 
 function Compile-And-Zip {
     param (
@@ -44,5 +46,7 @@ Compile-And-Zip "src/reports/index.ts" "dist/reports/index.js" "reports_payload.
 Compile-And-Zip "src/events/auditoria.ts" "dist/events/auditoria.js" "auditoria_payload.zip"
 Compile-And-Zip "src/events/inventario.ts" "dist/events/inventario.js" "inventario_payload.zip"
 Compile-And-Zip "src/events/notificaciones.ts" "dist/events/notificaciones.js" "notificaciones_payload.zip"
+Compile-And-Zip "src/tiendas/index.ts" "dist/tiendas/index.js" "tiendas_payload.zip"
+Compile-And-Zip "src/cart/index.ts" "dist/cart/index.js" "cart_payload.zip"
 
 Write-Host "Compilación y empaquetado finalizados exitosamente."

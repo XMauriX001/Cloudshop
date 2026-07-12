@@ -128,3 +128,6 @@ Para evitar cargos innecesarios en tu cuenta de AWS, puedes destruir toda la inf
 terraform destroy
 ```
 *Confirma escribiendo `yes` cuando sea solicitado.*
+
+## CORS pendiente
+El API Gateway no tiene configurado CORS (métodos OPTIONS). Si van a llamar la API desde el navegador (frontend en S3/CloudFront), van a necesitar agregar OPTIONS + headers Access-Control-Allow-* en cada recurso, o los requests van a fallar por CORS. Por ahora la API solo se puede probar con Postman/curl.

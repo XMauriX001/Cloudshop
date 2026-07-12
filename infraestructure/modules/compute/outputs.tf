@@ -21,3 +21,7 @@ output "lambda_notificaciones_arn" {
 output "lambda_notificaciones_function_name" {
   value = aws_lambda_function.notificaciones_service.function_name
 }
+
+output "api_invoke_url" {
+  value = aws_api_gateway_stage.cloudshop_stage.invoke_url
+}

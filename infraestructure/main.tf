@@ -15,18 +15,22 @@ module "security" {
     module.database.productos_table_arn,
     module.database.pedidos_table_arn,
     module.database.tiendas_table_arn,
+    module.database.carritos_table_arn,
     module.database.auditoria_table_arn
   ]
 }
 
 module "compute" {
-  source               = "./modules/compute"
-  environment          = var.environment
-  lambda_exec_role_arn = module.security.lambda_exec_role_arn
-  usuarios_table_name  = module.database.usuarios_table_name
-  productos_table_name = module.database.productos_table_name
-  pedidos_table_name   = module.database.pedidos_table_name
-  auditoria_table_name = module.database.auditoria_table_name
+  source                = "./modules/compute"
+  environment            = var.environment
+  lambda_exec_role_arn   = module.security.lambda_exec_role_arn
+  usuarios_table_name    = module.database.usuarios_table_name
+  productos_table_name   = module.database.productos_table_name
+  pedidos_table_name     = module.database.pedidos_table_name
+  tiendas_table_name     = module.database.tiendas_table_name
+  carritos_table_name    = module.database.carritos_table_name
+  auditoria_table_name   = module.database.auditoria_table_name
+  jwt_secret             = var.jwt_secret
 }
 
 module "events" {

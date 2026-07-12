@@ -112,3 +112,14 @@ resource "aws_dynamodb_table" "auditoria" {
     type = "S"
   }
 }
+# Tabla de carrito
+resource "aws_dynamodb_table" "carritos" {
+  name         = "${var.environment}-carritos"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "usuario_id"
+
+  attribute {
+    name = "usuario_id"
+    type = "S"
+  }
+}

@@ -27,3 +27,19 @@ variable "auditoria_table_name" {
   description = "Nombre de la tabla de DynamoDB para auditoria"
   type        = string
 }
+
+variable "tiendas_table_name" {
+  description = "Nombre de la tabla de DynamoDB para tiendas"
+  type        = string
+}
+
+variable "carritos_table_name" {
+  description = "Nombre de la tabla de DynamoDB para carritos"
+  type        = string
+}
+
+variable "jwt_secret" {
+  description = "Secreto compartido para firmar y verificar JWT en todas las Lambdas que autentican"
+  type        = string
+  sensitive   = true
+}

@@ -5,7 +5,6 @@ import { useCart } from '../context/CartContext';
 export const Catalogo: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { addToCart, cartItems } = useCart();
 
   useEffect(() => {
@@ -14,7 +13,7 @@ export const Catalogo: React.FC = () => {
         const data = await productoService.obtenerTodos();
         setProductos(Array.isArray(data) ? data : []);
       } catch (err: any) {
-        setError(err.message || 'Mostrando catálogo de simulación.');
+        console.error(err.message || 'Mostrando catálogo de simulación.');
         // Respaldo premium de simulación
         setProductos([
           { id: '101', codigo: 'PROD-001', nombre: 'iPhone 15 Pro', descripcion: 'Titanio natural, pantalla Super Retina XDR de 6.1 pulgadas y chip A17 Pro.', categoria: 'Electrónica', precio: 999.99, inventario: 5, tiendaId: '1' },

@@ -4,7 +4,6 @@ import { productoService, type Producto } from '../services/productoService';
 export const Inventario: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const cargarInventario = async () => {
     setLoading(true);
@@ -12,7 +11,7 @@ export const Inventario: React.FC = () => {
       const data = await productoService.obtenerTodos();
       setProductos(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      setError(err.message || 'Mostrando inventario de prueba.');
+      console.error(err.message || 'Mostrando inventario de prueba.');
       // Datos mock premium de respaldo
       setProductos([
         { id: '101', codigo: 'PROD-001', nombre: 'iPhone 15 Pro', descripcion: 'Titanio natural.', categoria: 'Electrónica', precio: 999.99, inventario: 15, tiendaId: '1', tiendaNombre: 'Tech Store' },

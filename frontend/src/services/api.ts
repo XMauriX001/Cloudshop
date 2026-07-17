@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://q5povgck6h.execute-api.us-east-1.amazonaws.com/dev';
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   // Recuperamos el token del localStorage (lo guardaremos ahí al hacer login)

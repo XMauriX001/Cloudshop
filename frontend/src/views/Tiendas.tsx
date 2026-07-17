@@ -4,14 +4,12 @@ import { tiendaService, type Tienda } from '../services/tiendaService';
 export const Tiendas: React.FC = () => {
   const [tiendas, setTiendas] = useState<Tienda[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   // Estados para el Modal de Crear/Editar
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTienda, setEditingTienda] = useState<Tienda | null>(null);
   const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
 
   // Cargar tiendas al montar el componente
   const cargarTiendas = async () => {
@@ -20,12 +18,12 @@ export const Tiendas: React.FC = () => {
       const data = await tiendaService.obtenerTodas();
       setTiendas(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      setError(err.message || 'Error al cargar las tiendas. Mostrando datos de prueba.');
+      console.error(err.message || 'Error al cargar las tiendas. Mostrando datos de prueba.');
       // Datos mock de respaldo por si la API aún no tiene registros
       setTiendas([
-        { id: '1', nombre: 'Tech Store', descripcion: 'Tecnología y gadgets de última generación.', categoria: 'Electrónica', estado: 'Activa' },
-        { id: '2', nombre: 'Moda Express', descripcion: 'Ropa casual y accesorios modernos.', categoria: 'Ropa', estado: 'Activa' },
-        { id: '3', nombre: 'Bazar Central', descripcion: 'Artículos para el hogar y decoración.', categoria: 'Hogar', estado: 'Inactiva' },
+        { id: '1', nombre: 'Tech Store', ubicacion: 'Centro Comercial Norte, Local 45', estado: 'ACTIVA' },
+        { id: '2', nombre: 'Moda Express', ubicacion: 'Avenida Principal #123', estado: 'ACTIVA' },
+        { id: '3', nombre: 'Bazar Central', ubicacion: 'Callejón de las Flores #8', estado: 'INACTIVA' },
       ]);
     } finally {
       setLoading(false);
@@ -39,16 +37,14 @@ export const Tiendas: React.FC = () => {
   const abrirCrearModal = () => {
     setEditingTienda(null);
     setNombre('');
-    setDescripcion('');
-    setCategoria('');
+    setUbicacion('');
     setIsModalOpen(true);
   };
 
   const abrirEditarModal = (tienda: Tienda) => {
     setEditingTienda(tienda);
     setNombre(tienda.nombre);
-    setDescripcion(tienda.descripcion);
-    setCategoria(tienda.categoria);
+    setUbicacion(tienda.ubicacion);
     setIsModalOpen(true);
   };
 
@@ -57,10 +53,10 @@ export const Tiendas: React.FC = () => {
     try {
       if (editingTienda) {
         // Actualizar tienda existente
-        await tiendaService.actualizar(editingTienda.id, { nombre, descripcion, categoria });
+        await tiendaService.actualizar(editingTienda.id, { nombre, ubicacion });
       } else {
         // Crear nueva tienda
-        await tiendaService.crear({ nombre, descripcion, categoria, estado: 'Activa' });
+        await tiendaService.crear({ nombre, ubicacion, estado: 'ACTIVA' });
       }
       setIsModalOpen(false);
       cargarTiendas();
@@ -68,14 +64,13 @@ export const Tiendas: React.FC = () => {
       alert(err.message || 'Error al guardar la tienda. Aplicando localmente para prueba visual.');
       // Simulación local para que no te estanques si la API falla
       if (editingTienda) {
-        setTiendas(tiendas.map(t => t.id === editingTienda.id ? { ...t, nombre, descripcion, categoria } : t));
+        setTiendas(tiendas.map(t => t.id === editingTienda.id ? { ...t, nombre, ubicacion } : t));
       } else {
         const nueva: Tienda = {
           id: Date.now().toString(),
           nombre,
-          descripcion,
-          categoria,
-          estado: 'Activa'
+          ubicacion,
+          estado: 'ACTIVA'
         };
         setTiendas([...tiendas, nueva]);
       }
@@ -84,12 +79,12 @@ export const Tiendas: React.FC = () => {
   };
 
   const alternarEstadoTienda = async (tienda: Tienda) => {
-    const nuevoEstado = tienda.estado === 'Activa' ? 'Inactiva' : 'Activa';
+    const nuevoEstado = tienda.estado === 'ACTIVA' ? 'INACTIVA' : 'ACTIVA';
     try {
-      if (nuevoEstado === 'Inactiva') {
-        await tiendaService.desactivar(tienda.id); // DELETE para desactivar[cite: 1]
+      if (nuevoEstado === 'INACTIVA') {
+        await tiendaService.desactivar(tienda.id); // DELETE para desactivar
       } else {
-        await tiendaService.actualizar(tienda.id, { estado: 'Activa' });
+        await tiendaService.actualizar(tienda.id, { estado: 'ACTIVA' });
       }
       cargarTiendas();
     } catch (err) {
@@ -135,26 +130,26 @@ export const Tiendas: React.FC = () => {
             <div
               key={tienda.id}
               className={`bg-white border p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between ${
-                tienda.estado === 'Inactiva' ? 'border-zinc-200/60 opacity-75' : 'border-zinc-200'
+                tienda.estado === 'INACTIVA' ? 'border-zinc-200/60 opacity-75' : 'border-zinc-200'
               }`}
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-800">
-                    {tienda.categoria}
+                    Ubicación
                   </span>
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      tienda.estado === 'Activa'
+                      tienda.estado === 'ACTIVA'
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                         : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
                     }`}
                   >
-                    {tienda.estado}
+                    {tienda.estado === 'ACTIVA' ? 'Activa' : 'Inactiva'}
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-zinc-900">{tienda.nombre}</h3>
-                <p className="text-sm text-zinc-500 line-clamp-2">{tienda.descripcion}</p>
+                <p className="text-sm text-zinc-500 line-clamp-2">{tienda.ubicacion}</p>
               </div>
 
               {/* Botones de acción inferiores */}
@@ -168,12 +163,12 @@ export const Tiendas: React.FC = () => {
                 <button
                   onClick={() => alternarEstadoTienda(tienda)}
                   className={`text-xs font-bold transition-colors ${
-                    tienda.estado === 'Activa'
+                    tienda.estado === 'ACTIVA'
                       ? 'text-red-600 hover:text-red-800'
                       : 'text-emerald-600 hover:text-emerald-800'
                   }`}
                 >
-                  {tienda.estado === 'Activa' ? 'Desactivar' : 'Activar'}
+                  {tienda.estado === 'ACTIVA' ? 'Desactivar' : 'Activar'}
                 </button>
               </div>
             </div>
@@ -211,29 +206,15 @@ export const Tiendas: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Categoría
+                  Ubicación
                 </label>
                 <input
                   type="text"
                   required
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
+                  value={ubicacion}
+                  onChange={(e) => setUbicacion(e.target.value)}
                   className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900 transition-all text-sm"
-                  placeholder="Ej. Electrónica, Ropa, etc."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Descripción
-                </label>
-                <textarea
-                  required
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  rows={3}
-                  className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900 transition-all text-sm resize-none"
-                  placeholder="Describe brevemente de qué trata la tienda..."
+                  placeholder="Ej. Centro Comercial Norte, Local 45"
                 />
               </div>
 

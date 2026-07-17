@@ -8,33 +8,45 @@ export interface Usuario {
   estado: 'Activo' | 'Inactivo';
 }
 
+// Convierte el formato del backend (español) al formato que usa el frontend
+const mapearUsuario = (u: any): Usuario => ({
+  id: u.usuario_id,
+  email: u.correo,
+  role: u.rol,
+  estado: u.estado === 'INACTIVO' ? 'Inactivo' : 'Activo'
+});
+
 export const usuarioService = {
-  // GET /usuarios
   obtenerTodos: async (): Promise<Usuario[]> => {
-    return apiFetch('/usuarios', { method: 'GET' });
+    const data = await apiFetch('/usuarios', { method: 'GET' });
+    const lista = data.usuarios || [];
+    return lista.map(mapearUsuario);
   },
 
-  // POST /usuarios (Crear usuario de forma interna)
-  crear: async (usuario: Omit<Usuario, 'id' | 'estado'> & { contrasena: string }): Promise<Usuario> => {
+  crear: async (usuario: { email: string; contrasena: string; role: UserRole }): Promise<any> => {
     return apiFetch('/usuarios', {
       method: 'POST',
       body: JSON.stringify({
-        email: usuario.email,
-        contrasena: usuario.contrasena,
-        role: usuario.role
+        correo: usuario.email,
+        password: usuario.contrasena,
+        nombre: usuario.email.split('@')[0], 
+        rol: usuario.role
       }),
     });
   },
 
-  // PUT /usuarios/{id} (Actualizar rol o datos)
-  actualizar: async (id: string, usuario: Partial<Usuario>): Promise<Usuario> => {
+  actualizar: async (id: string, cambios: Partial<{ email: string; role: UserRole; estado: 'Activo' | 'Inactivo' }>): Promise<any> => {
+    const body: Record<string, any> = {};
+    if (cambios.role) body.rol = cambios.role;
+    if (cambios.estado) body.estado = cambios.estado === 'Activo' ? 'ACTIVO' : 'INACTIVO';
+    // Nota: tu backend no permite cambiar "correo" en actualizarUsuario, solo nombre/password/rol/estado
+
     return apiFetch(`/usuarios/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(usuario),
+      body: JSON.stringify(body),
     });
   },
 
-  // DELETE /usuarios/{id} (Desactivar usuario)
   desactivar: async (id: string): Promise<void> => {
     return apiFetch(`/usuarios/${id}`, {
       method: 'DELETE',

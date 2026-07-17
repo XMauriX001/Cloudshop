@@ -7,29 +7,24 @@ export const Usuarios: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados del Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
 
-  // Campos del Formulario
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [role, setRole] = useState<UserRole>('Cliente');
 
   const cargarUsuarios = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await usuarioService.obtenerTodos();
-      setUsuarios(Array.isArray(data) ? data : []);
+      setUsuarios(data);
     } catch (err: any) {
-      setError(err.message || 'Mostrando directorio de usuarios simulado.');
-      // Datos mock premium de respaldo alineados con tus accesos reales
-      setUsuarios([
-        { id: '1', email: 'admin@cloudshop.com', role: 'Administrador', estado: 'Activo' },
-        { id: '2', email: 'operador@cloudshop.com', role: 'Operador', estado: 'Activo' },
-        { id: '3', email: 'juancliente@gmail.com', role: 'Cliente', estado: 'Activo' },
-        { id: '4', email: 'ex-empleado@cloudshop.com', role: 'Operador', estado: 'Inactivo' },
-      ]);
+      console.error('Error cargando usuarios:', err);
+      setError(err.message || 'Error al conectar con la base de datos.');
+      setUsuarios([]);
     } finally {
       setLoading(false);
     }
@@ -41,6 +36,7 @@ export const Usuarios: React.FC = () => {
 
   const abrirCrearModal = () => {
     setEditingUsuario(null);
+    setNombre('');
     setEmail('');
     setContrasena('');
     setRole('Cliente');
@@ -49,8 +45,9 @@ export const Usuarios: React.FC = () => {
 
   const abrirEditarModal = (user: Usuario) => {
     setEditingUsuario(user);
+    setNombre('');
     setEmail(user.email);
-    setContrasena(''); // No editamos contraseña directamente aquí por seguridad
+    setContrasena('');
     setRole(user.role);
     setIsModalOpen(true);
   };
@@ -59,49 +56,34 @@ export const Usuarios: React.FC = () => {
     e.preventDefault();
     try {
       if (editingUsuario) {
-        // Actualizar usuario existente
-        await usuarioService.actualizar(editingUsuario.id, { email, role });
+        await usuarioService.actualizar(editingUsuario.id, { role });
       } else {
-        // Registrar nuevo usuario
         await usuarioService.crear({ email, contrasena, role });
       }
       setIsModalOpen(false);
       cargarUsuarios();
     } catch (err: any) {
-      // Simulación local defensiva
-      if (editingUsuario) {
-        setUsuarios(usuarios.map(u => u.id === editingUsuario.id ? { ...u, email, role } : u));
-      } else {
-        const nuevo: Usuario = {
-          id: Date.now().toString(),
-          email,
-          role,
-          estado: 'Activo'
-        };
-        setUsuarios([...usuarios, nuevo]);
-      }
-      setIsModalOpen(false);
+      console.error('Error guardando usuario:', err);
+      alert(err.message || 'Error al guardar el usuario. Revisa la consola.');
     }
   };
 
   const alternarEstadoUsuario = async (user: Usuario) => {
-    const nuevoEstado = user.estado === 'Activo' ? 'Inactiva' : 'Activo';
     try {
-      if (nuevoEstado === 'Inactiva') {
-        await usuarioService.desactivar(user.id); // DELETE para desactivar
+      if (user.estado === 'Activo') {
+        await usuarioService.desactivar(user.id);
       } else {
         await usuarioService.actualizar(user.id, { estado: 'Activo' });
       }
       cargarUsuarios();
-    } catch (err) {
-      // Simulación local
-      setUsuarios(usuarios.map(u => u.id === user.id ? { ...u, estado: nuevoEstado === 'Inactiva' ? 'Inactivo' : 'Activo' } : u));
+    } catch (err: any) {
+      console.error('Error cambiando estado:', err);
+      alert(err.message || 'No se pudo cambiar el estado del usuario.');
     }
   };
 
   return (
     <div className="space-y-8">
-      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Gestión de Usuarios</h2>
@@ -118,6 +100,12 @@ export const Usuarios: React.FC = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm">
+          {error}
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
@@ -125,7 +113,6 @@ export const Usuarios: React.FC = () => {
           ))}
         </div>
       ) : (
-        /* TABLA DE USUARIOS */
         <div className="overflow-hidden bg-white border border-zinc-200 shadow-sm rounded-2xl">
           <div className="min-w-full overflow-x-auto">
             <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
@@ -192,7 +179,6 @@ export const Usuarios: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL PARA CREAR / EDITAR USUARIO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white border border-zinc-200 shadow-xl rounded-2xl max-w-md w-full p-6 space-y-6">
@@ -204,12 +190,26 @@ export const Usuarios: React.FC = () => {
             </div>
 
             <form onSubmit={guardarUsuario} className="space-y-4">
+              {!editingUsuario && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">Nombre completo</label>
+                  <input
+                    type="text"
+                    required
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:bg-white focus:outline-none text-sm"
+                    placeholder="Ej. Juan Pérez"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">Correo Electrónico</label>
                 <input
                   type="email"
                   required
-                  disabled={!!editingUsuario} // No dejamos cambiar el email si estamos editando
+                  disabled={!!editingUsuario}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:bg-white focus:outline-none text-sm disabled:opacity-60"
@@ -239,8 +239,8 @@ export const Usuarios: React.FC = () => {
                   className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-zinc-900 focus:border-zinc-900 focus:bg-white focus:outline-none text-sm"
                 >
                   <option value="Cliente">Cliente (Comprador)</option>
-                  <option value="Operador">Operador (Logística & Despacho)[cite: 1]</option>
-                  <option value="Administrador">Administrador (Control Total)[cite: 1]</option>
+                  <option value="Operador">Operador (Logística & Despacho)</option>
+                  <option value="Administrador">Administrador (Control Total)</option>
                 </select>
               </div>
 

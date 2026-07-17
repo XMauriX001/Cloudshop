@@ -8,11 +8,9 @@ export const Productos: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados del Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
   
-  // Campos del Formulario
   const [codigo, setCodigo] = useState('');
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -23,19 +21,20 @@ export const Productos: React.FC = () => {
 
   const cargarDatos = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Cargamos productos y tiendas en paralelo de manera ultra-rápida
       const [productosData, tiendasData] = await Promise.all([
         productoService.obtenerTodos(),
-        tiendaService.obtenerTodas().catch(() => []) // Evitamos que truene si no hay tiendas creadas
+        tiendaService.obtenerTodas().catch(() => []) 
       ]);
 
-      setTiendas(Array.isArray(tiendasData) ? tiendasData : []);
+      const listaTiendas = Array.isArray(tiendasData) ? tiendasData : [];
+      setTiendas(listaTiendas);
       
-      // Mapeamos los productos con el nombre real de su tienda para la UI
       const listaProductos = Array.isArray(productosData) ? productosData : [];
-      const productosMapeados = listaProductos.map((prod: any) => {
-        const tienda = tiendasData.find((t: any) => t.id === prod.tiendaId);
+      
+      const productosMapeados = listaProductos.map((prod: Producto) => {
+        const tienda = listaTiendas.find((t: any) => t.tienda_id === prod.tiendaId);
         return {
           ...prod,
           tiendaNombre: tienda ? tienda.nombre : 'Tienda Desconocida'
@@ -44,17 +43,8 @@ export const Productos: React.FC = () => {
 
       setProductos(productosMapeados);
     } catch (err: any) {
-      setError(err.message || 'Mostrando catálogo de prueba.');
-      // Datos mock premium de respaldo
-      setTiendas([
-        { id: '1', nombre: 'Tech Store', descripcion: '', categoria: 'Electrónica', estado: 'Activa' },
-        { id: '2', nombre: 'Moda Express', descripcion: '', categoria: 'Ropa', estado: 'Activa' }
-      ]);
-      setProductos([
-        { id: '101', codigo: 'PROD-001', nombre: 'iPhone 15 Pro', descripcion: 'Titanio natural, 128GB.', categoria: 'Electrónica', precio: 999.99, inventario: 15, tiendaId: '1', tiendaNombre: 'Tech Store' },
-        { id: '102', codigo: 'PROD-002', nombre: 'Camiseta Minimalista', descripcion: 'Algodón orgánico premium.', categoria: 'Ropa', precio: 29.99, inventario: 50, tiendaId: '2', tiendaNombre: 'Moda Express' },
-        { id: '103', codigo: 'PROD-003', nombre: 'Teclado Mecánico', descripcion: 'Switch silent red, layout español.', categoria: 'Electrónica', precio: 89.99, inventario: 0, tiendaId: '1', tiendaNombre: 'Tech Store' } // Agotado
-      ]);
+      console.error("Error cargando:", err);
+      setError('Error al conectar con la base de datos.');
     } finally {
       setLoading(false);
     }
@@ -66,64 +56,50 @@ export const Productos: React.FC = () => {
 
   const abrirCrearModal = () => {
     setEditingProducto(null);
-    setCodigo('');
-    setNombre('');
-    setDescripcion('');
-    setCategoria('');
-    setPrecio(0);
-    setInventario(0);
+    setCodigo(''); setNombre(''); setDescripcion(''); setCategoria('');
+    setPrecio(0); setInventario(0);
     setTiendaId(tiendas[0]?.id || '');
     setIsModalOpen(true);
   };
 
   const abrirEditarModal = (prod: Producto) => {
     setEditingProducto(prod);
-    setCodigo(prod.codigo);
-    setNombre(prod.nombre);
-    setDescripcion(prod.descripcion);
-    setCategoria(prod.categoria);
-    setPrecio(prod.precio);
-    setInventario(prod.inventario);
+    setCodigo(prod.codigo); setNombre(prod.nombre); setDescripcion(prod.descripcion);
+    setCategoria(prod.categoria); setPrecio(prod.precio); setInventario(prod.inventario);
     setTiendaId(prod.tiendaId);
     setIsModalOpen(true);
   };
 
   const guardarProducto = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { codigo, nombre, descripcion, categoria, precio, inventario, tiendaId };
+    const payload = { 
+      codigo, nombre, descripcion, categoria, precio, 
+      inventario_disponible: inventario, 
+      tienda_id: tiendaId 
+    };
 
     try {
       if (editingProducto) {
-        await productoService.actualizar(editingProducto.id, payload);
+        await productoService.actualizar(editingProducto.id, payload as any);
       } else {
-        await productoService.crear(payload);
+        await productoService.crear(payload as any);
       }
       setIsModalOpen(false);
-      cargarDatos();
+      cargarDatos(); 
     } catch (err: any) {
-      // Simulación local defensiva
-      const tiendaAsociada = tiendas.find(t => t.id === tiendaId);
-      if (editingProducto) {
-        setProductos(productos.map(p => p.id === editingProducto.id ? { ...p, ...payload, tiendaNombre: tiendaAsociada?.nombre } : p));
-      } else {
-        const nuevo: Producto = {
-          id: Date.now().toString(),
-          ...payload,
-          tiendaNombre: tiendaAsociada?.nombre || 'Tienda Seleccionada'
-        };
-        setProductos([...productos, nuevo]);
-      }
-      setIsModalOpen(false);
+      console.error("Error al guardar:", err);
+      alert('Error guardando el producto. Revisa la consola.');
     }
   };
 
   const eliminarProducto = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este producto del catálogo?')) return;
+    if (!confirm('¿Eliminar producto?')) return;
     try {
       await productoService.eliminar(id);
       cargarDatos();
     } catch (err) {
-      setProductos(productos.filter(p => p.id !== id));
+      console.error("Error al eliminar:", err);
+      alert('Error al intentar eliminar.');
     }
   };
 
@@ -146,6 +122,12 @@ export const Productos: React.FC = () => {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm">
+          {error}
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
@@ -153,7 +135,7 @@ export const Productos: React.FC = () => {
           ))}
         </div>
       ) : (
-        /* TABLA PREMIUM RESPONSIVA: Se transforma en tarjetas en celulares */
+        /* TABLA PREMIUM RESPONSIVA */
         <div className="overflow-hidden bg-white border border-zinc-200 shadow-sm rounded-2xl">
           <div className="min-w-full overflow-x-auto">
             <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
@@ -180,7 +162,7 @@ export const Productos: React.FC = () => {
                         {prod.tiendaNombre}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-medium text-zinc-900">${prod.precio.toFixed(2)}</td>
+                    <td className="px-6 py-4 font-medium text-zinc-900">${Number(prod.precio).toFixed(2)}</td>
                     <td className="px-6 py-4">
                       {prod.inventario > 0 ? (
                         <span className="inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">
@@ -270,11 +252,15 @@ export const Productos: React.FC = () => {
                     onChange={(e) => setTiendaId(e.target.value)}
                     className="mt-1 block w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none"
                   >
-                    {tiendas.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.nombre}
-                      </option>
-                    ))}
+                    {tiendas.length > 0 ? (
+                      tiendas.map((t: any) => (
+                        <option key={t.tienda_id} value={t.tienda_id}>
+                          {t.nombre}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Sin tiendas disponibles</option>
+                    )}
                   </select>
                 </div>
               </div>
